@@ -119,39 +119,10 @@ sudo systemctl enable auto-shutdown
 sudo systemctl start auto-shutdown
 
 if [ "$USE_DUCK_DNS" = "true" ]; then
-# Create DuckDNS update script
-cat << EOF | sudo tee /home/ubuntu/duckdns-update.sh
-#!/bin/sh
-curl "https://www.duckdns.org/update?domains=${DOMAIN}&token=${TOKEN}"
-EOF
-
-# Make the DuckDNS script executable
-sudo chmod +x /home/ubuntu/duckdns-update.sh
-sudo chown ubuntu:ubuntu /home/ubuntu/duckdns-update.sh
-
-# Create systemd service for DuckDNS update
-cat << 'EOF' | sudo tee /etc/systemd/system/duckdns-update.service
-[Unit]
-Description=DuckDNS update service
-After=network-online.target
-Wants=network-online.target
-
-[Service]
-ExecStart=/home/ubuntu/duckdns-update.sh
-User=ubuntu
-Group=ubuntu
-StandardOutput=journal
-Restart=on-failure
-
-[Install]
-WantedBy=multi-user.target
-EOF
-
-# Enable and start the DuckDNS update service
-sudo systemctl enable duckdns-update
-sudo systemctl start duckdns-update
+curl "https://www.duckdns.org/update?domains=$DOMAIN&token=$TOKEN"
+# Add the DuckDNS update command to crontab for the user
+su - ubuntu -c " (crontab -l 2>/dev/null; echo \"@reboot curl 'https://www.duckdns.org/update?domains=$DOMAIN&token=$TOKEN'\") | crontab -"
 fi
-
 
 su - ubuntu -c "/usr/local/bin/aws s3 sync s3://$S3_SAVE_BUCKET /home/ubuntu/.config/Epic/FactoryGame/Saved/SaveGames/server"
 
