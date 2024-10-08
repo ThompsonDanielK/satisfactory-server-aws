@@ -163,42 +163,6 @@ export class ServerHostingStack extends Stack {
       sudo ${localPath} ${savesBucket.bucketName} ${Config.useExperimentalBuild} ${useDuckDns} ${Config.duckDnsDomain} ${Config.duckDnsToken}\
     `);
 
-    if (Config.duckDnsDomain && Config.duckDnsToken) {
-      server.userData.addCommands(`
-        # Create DuckDNS update script
-        cat << 'EOF' | sudo tee /home/ubuntu/duckdns-update.sh
-        #!/bin/sh
-        curl "https://www.duckdns.org/update?domains=${Config.duckDnsDomain}&token=${Config.duckDnsToken}"
-        EOF
-
-        # Make the DuckDNS script executable
-        sudo chmod +x /home/ubuntu/duckdns-update.sh
-        sudo chown ubuntu:ubuntu /home/ubuntu/duckdns-update.sh
-
-        # Create systemd service for DuckDNS update
-        cat << 'EOF' | sudo tee /etc/systemd/system/duckdns-update.service
-        [Unit]
-        Description=DuckDNS update service
-        After=network-online.target
-        Wants=network-online.target
-
-        [Service]
-        ExecStart=/home/ubuntu/duckdns-update.sh
-        User=ubuntu
-        Group=ubuntu
-        StandardOutput=journal
-        Restart=on-failure
-
-        [Install]
-        WantedBy=multi-user.target
-        EOF
-
-        # Enable and start the DuckDNS update service
-        sudo systemctl enable duckdns-update
-        sudo systemctl start duckdns-update
-      `);
-    }
-
     //////////////////////////////
     // Add api to start server
     //////////////////////////////
